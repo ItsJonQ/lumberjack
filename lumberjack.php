@@ -10,16 +10,69 @@
 
 // Echo error message if Timber is missing.
 
-function lumberjack_init() {
-  if ( class_exists('TimberPost') ) {
-    require_once( 'functions/lumberjack-base.php' );
-    require_once( 'functions/lumberjack-post.php' );
-  }
-}
-
 global $lumberjack;
 
 class Lumberjack {
+
+  static function get_category_meta() {
+    global $post;
+
+    $post_categories = wp_get_post_categories( $post->ID );
+
+    if( !$post_categories ) {
+      return null;
+    }
+
+    $categories = array();
+
+    foreach( $post_categories as $cat ) {
+      $cat = get_category( $cat );
+
+        // Create a new category object
+      $category = new stdClass();
+
+        // Set category data
+      $category->id = $cat->term_id;
+      $category->name = $cat->name;
+      $category->slug = $cat->slug;
+      $category->link = get_category_link( $cat );
+
+        // Push the category object to the categories array
+      $categories[] = $category;
+    }
+
+    return $categories;
+  }
+
+  static function get_tag_meta() {
+    global $post;
+
+    $post_tags = get_the_tags( $post->ID );
+
+    if( !$post_tags ) {
+      return null;
+    }
+
+    $tags = array();
+
+    foreach( $post_tags as $t ) {
+
+        // Create a new tag object
+      $tag = new stdClass();
+
+        // Set tag data
+      $tag->id = $t->term_id;
+      $tag->name = $t->name;
+      $tag->slug = $t->slug;
+      $tag->link = get_tag_link( $t->term_id );
+
+        // Push the tag object to the tags array
+      $tags[] = $tag;
+
+    }
+
+    return $tags;
+  }
 
   /**
    * @return array
@@ -66,10 +119,58 @@ class Lumberjack {
     // Returning the updated Timber pagination array
     return $pagination;
   }
+
+  /**
+   * @param number
+   * @return object
+   */
+  static function get_related( $posts_per_page = 5 ) {
+    global $post;
+
+    // Get the categories
+    $categories = self::get_category_meta();
+
+    // Return if the post does not have any categories
+    if( empty( $categories ) ) {
+      return false;
+    }
+
+    // Adding the IDs for each category to the $cat_ids array
+    $cat_ids = array();
+
+    foreach( $categories as $cat ) {
+      array_push( $cat_ids, $cat->id );
+    }
+
+    // Ensure $posts_per_page is set correctly
+    if( isset( $posts_per_page ) && !is_numeric( $posts_per_page ) ) {
+      $posts_per_page = 5;
+    }
+
+    // Setting up the $args for querying
+    $args = array(
+      'category__and'   => $cat_ids,
+      'post__not_in'    => array( $post->ID ),
+      'posts_per_page'  => $posts_per_page
+    );
+
+    // Getting the posts
+    $posts = Timber::get_posts( $args );
+
+    // Returning the posts
+    return $posts;
+  }
 }
 
 $lumberjack = new Lumberjack();
 $GLOBALS['lumberjack'] = $lumberjack;
+
+function lumberjack_init() {
+  if ( class_exists('TimberPost') ) {
+    require_once( 'functions/lumberjack-base.php' );
+    require_once( 'functions/lumberjack-post.php' );
+  }
+}
 
 // Initialize Lumberjack
 add_action( 'plugins_loaded', 'lumberjack_init' );
