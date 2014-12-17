@@ -130,6 +130,9 @@ class Lumberjack {
     // Get the categories
     $categories = self::get_category_meta();
 
+    // Get the tags
+    $tags = self::get_tag_meta();
+
     // Return if the post does not have any categories
     if( empty( $categories ) ) {
       return false;
@@ -137,9 +140,14 @@ class Lumberjack {
 
     // Adding the IDs for each category to the $cat_ids array
     $cat_ids = array();
+    $tag_ids = array();
 
     foreach( $categories as $cat ) {
       array_push( $cat_ids, $cat->id );
+    }
+
+    foreach( $tags as $tag ) {
+      array_push( $tag_ids, $tag->id );
     }
 
     // Ensure $posts_per_page is set correctly
@@ -149,8 +157,19 @@ class Lumberjack {
 
     // Setting up the $args for querying
     $args = array(
-      'category__and'   => $cat_ids,
+      'category__in'    => $cat_ids,
+      'tag__in'         => $tag_ids,
       'post__not_in'    => array( $post->ID ),
+
+      'orderby'         => 'rand',
+
+      'date_query' => array(
+        array(
+          'column' => 'post_date_gmt',
+          'after'  => '60 days ago'
+        )
+      ),
+
       'posts_per_page'  => $posts_per_page
     );
 
