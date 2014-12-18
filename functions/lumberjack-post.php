@@ -2,6 +2,15 @@
 
 class LumberjackPost extends LumberjackBase {
 
+  public function set_disqus_identifier() {
+    // Defining the identifier
+    $identifier = $this->id . ' ' . $this->guid;
+
+    $this->disqus_identifier = $identifier;
+
+    return $identifier;
+  }
+
   public function set_category() {
     global $lumberjack;
 
@@ -29,6 +38,8 @@ class LumberjackPost extends LumberjackBase {
 
     self::set_category();
     self::set_tags();
+
+    self::set_disqus_identifier();
 
   }
 }
