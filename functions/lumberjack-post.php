@@ -1,45 +1,61 @@
 <?php
 
-class LumberjackPost extends LumberjackBase {
+class LumberjackPost extends TimberPost {
 
-  public function set_disqus_identifier() {
+  var $_disqus_identifier;
+  var $_category;
+  var $_tags;
+  var $_snippet_thumbnail;
+
+  public function disqus_identifier() {
     // Defining the identifier
     $identifier = $this->id . ' ' . $this->guid;
 
-    $this->disqus_identifier = $identifier;
+    $this->_disqus_identifier = $identifier;
 
     return $identifier;
   }
 
-  public function set_category() {
+  public function category() {
     global $lumberjack;
 
     $category = $lumberjack->get_category_meta();
 
-    $this->category = $category;
+    $this->_category = $category;
 
     return $category;
   }
 
-  public function set_tags() {
+  public function tags() {
     global $lumberjack;
+    global $post;
 
     $tags = $lumberjack->get_tag_meta();
 
-    $this->tags = $tags;
+    $this->_tags = $tags;
 
     return $tags;
   }
 
-    // Initializing the model
-  public function __construct() {
+  public function snippet_thumbnail() {
+    global $lumberjack;
 
-    parent::__construct();
+    $images = $lumberjack::get_content_images( $this->content );
 
-    self::set_category();
-    self::set_tags();
+    // Return if $images is empty
+    if( empty( $images ) ) {
+      return;
+    }
 
-    self::set_disqus_identifier();
+    $thumbnail = null;
 
+    if( $images[0] ) {
+      $xpath = new DOMXPath( @DOMDocument::loadHTML( $images[0] ) );
+      $thumbnail = $xpath->evaluate("string(//img/@src)");
+    }
+
+    $this->_snippet_thumbnail = $thumbnail;
+
+    return $thumbnail;
   }
 }

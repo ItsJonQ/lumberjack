@@ -74,6 +74,53 @@ class Lumberjack {
     return $tags;
   }
 
+  static function get_content_media( $selector = null, $content = null ) {
+    global $post;
+
+    // Return the $content if $args are not defined
+    if( !isset( $selector ) ) {
+      return;
+    }
+
+    // Defining the Media ($1 as default to work with preg_replace)
+    $media = '$1';
+
+    // Regex filter to find/locate the <p> tags and the $selector
+    $filter = '/<p[^>]*>\\s*?(<a .*?><'.$selector.'.*?><\\/a>|<'.$selector.'.*?>)?\\s*<\/p>/';
+      // Adjust the class if the tag is an iFrame
+    if( $selector === 'iframe' ) {
+        // Defining the video sites to filter for
+      $video_sites = array(
+        'vimeo',
+        'youtube'
+        );
+        // Looping through the video sites
+      foreach($video_sites as $site) {
+          // If the content contains the $site's key name
+        if( strpos($content, $site) ) {
+            // Add video and the $site name
+          $args['class'] = $args['class'] . ' video ' . $site;
+            // Break the foreach loop
+          break;
+        }
+      }
+    }
+
+    // Defining the content
+    if( !isset( $content ) ) {
+      $content = $post->post_content;
+    }
+
+    // Parsing the $content for matches via preg_match_all
+    preg_match_all( $filter, $content, $matches );
+
+    return $matches[1];
+  }
+
+  static function get_content_images( $content ) {
+    return self::get_content_media( 'img', $content );
+  }
+
   /**
    * @return array
    */
@@ -118,6 +165,10 @@ class Lumberjack {
 
     // Returning the updated Timber pagination array
     return $pagination;
+  }
+
+  public static function get_posts($query = false, $PostClass = 'LumberjackPost', $return_collection = false ){
+      return TimberPostGetter::get_posts($query, $PostClass, $return_collection);
   }
 
   /**
@@ -167,11 +218,11 @@ class Lumberjack {
         array(
           'column' => 'post_date_gmt',
           'after'  => '60 days ago'
-        )
-      ),
+          )
+        ),
 
       'posts_per_page'  => $posts_per_page
-    );
+      );
 
     // Getting the posts
     $posts = Timber::get_posts( $args );
@@ -186,7 +237,6 @@ $GLOBALS['lumberjack'] = $lumberjack;
 
 function lumberjack_init() {
   if ( class_exists('TimberPost') ) {
-    require_once( 'functions/lumberjack-base.php' );
     require_once( 'functions/lumberjack-post.php' );
   }
 }
