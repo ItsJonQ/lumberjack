@@ -14,62 +14,18 @@ global $lumberjack;
 
 class Lumberjack {
 
-  static function get_category_meta() {
+  static function get_category() {
     global $post;
 
-    $post_categories = wp_get_post_categories( $post->ID );
-
-    if( !$post_categories ) {
-      return null;
-    }
-
-    $categories = array();
-
-    foreach( $post_categories as $cat ) {
-      $cat = get_category( $cat );
-
-        // Create a new category object
-      $category = new stdClass();
-
-        // Set category data
-      $category->id = $cat->term_id;
-      $category->name = $cat->name;
-      $category->slug = $cat->slug;
-      $category->link = get_category_link( $cat );
-
-        // Push the category object to the categories array
-      $categories[] = $category;
-    }
+    $categories = $post->terms( 'category' );
 
     return $categories;
   }
 
-  static function get_tag_meta() {
+  static function get_tags() {
     global $post;
 
-    $post_tags = get_the_tags( $post->ID );
-
-    if( !$post_tags ) {
-      return null;
-    }
-
-    $tags = array();
-
-    foreach( $post_tags as $t ) {
-
-        // Create a new tag object
-      $tag = new stdClass();
-
-        // Set tag data
-      $tag->id = $t->term_id;
-      $tag->name = $t->name;
-      $tag->slug = $t->slug;
-      $tag->link = get_tag_link( $t->term_id );
-
-        // Push the tag object to the tags array
-      $tags[] = $tag;
-
-    }
+    $tags = $post->terms( 'tags' );
 
     return $tags;
   }
@@ -179,14 +135,20 @@ class Lumberjack {
     global $post;
 
     // Get the categories
-    $categories = self::get_category_meta();
+    $categories = self::get_category();
 
     // Get the tags
-    $tags = self::get_tag_meta();
+    $tags = self::get_tags();
 
     // Return if the post does not have any categories
     if( empty( $categories ) ) {
       return false;
+    }
+
+    $not_in_posts = array( $post->ID );
+
+    if( $post->prev ) {
+      array_push( $not_in_posts, $post->prev->id );
     }
 
     // Adding the IDs for each category to the $cat_ids array
@@ -210,7 +172,7 @@ class Lumberjack {
     $args = array(
       'category__in'    => $cat_ids,
       'tag__in'         => $tag_ids,
-      'post__not_in'    => array( $post->ID ),
+      'post__not_in'    => $not_in_posts,
 
       'orderby'         => 'rand',
 
@@ -225,7 +187,7 @@ class Lumberjack {
       );
 
     // Getting the posts
-    $posts = Timber::get_posts( $args );
+    $posts = self::get_posts( $args );
 
     // Returning the posts
     return $posts;

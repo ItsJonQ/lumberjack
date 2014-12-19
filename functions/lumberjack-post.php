@@ -19,7 +19,7 @@ class LumberjackPost extends TimberPost {
   public function category() {
     global $lumberjack;
 
-    $category = $lumberjack->get_category_meta();
+    $category = $lumberjack->get_category();
 
     $this->_category = $category;
 
@@ -30,7 +30,7 @@ class LumberjackPost extends TimberPost {
     global $lumberjack;
     global $post;
 
-    $tags = $lumberjack->get_tag_meta();
+    $tags = $lumberjack->get_tags();
 
     $this->_tags = $tags;
 
