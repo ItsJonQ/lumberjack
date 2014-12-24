@@ -8,6 +8,8 @@ class LumberjackPost extends TimberPost {
   var $_snippet_thumbnail;
 
   var $PostClass = 'LumberjackPost';
+  var $ImageClass = 'TimberImage';
+
 
   public function disqus_identifier() {
     // Defining the identifier
@@ -42,20 +44,36 @@ class LumberjackPost extends TimberPost {
   public function snippet_thumbnail() {
     global $lumberjack;
 
-    $images = $lumberjack::get_content_images( $this->content );
+    $image = null;
 
-    // Return if $images is empty
-    if( empty( $images ) ) {
+    // Use the post's thumbnail if possible
+    if ( !function_exists('get_post_thumbnail_id') ) {
       return;
     }
 
-    $thumbnail = null;
+    $tid = get_post_thumbnail_id( $this->ID );
 
-    if( $images[0] ) {
-      $xpath = new DOMXPath( @DOMDocument::loadHTML( $images[0] ) );
-      $thumbnail = $xpath->evaluate("string(//img/@src)");
+    if ($tid) {
+      // Use the thumbnail as the snippet thumbnail
+      $image = $tid;
+    } else {
+      // Parse the content for images
+      $images = $lumberjack::get_content_images( $this->content );
+
+      // Return if $images is empty
+      if( empty( $images ) ) {
+        return;
+      }
+
+      if( $images[0] ) {
+        $xpath = new DOMXPath( @DOMDocument::loadHTML( $images[0] ) );
+        $image = $xpath->evaluate("string(//img/@src)");
+      }
+
     }
 
+    // Creating the thumbnail based on TimberImage
+    $thumbnail = new $this->ImageClass( $image );
     $this->_snippet_thumbnail = $thumbnail;
 
     return $thumbnail;
