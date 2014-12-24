@@ -7,6 +7,8 @@ class LumberjackPost extends TimberPost {
   var $_tags;
   var $_snippet_thumbnail;
 
+  var $PostClass = 'LumberjackPost';
+
   public function disqus_identifier() {
     // Defining the identifier
     $identifier = $this->id . ' ' . $this->guid;
